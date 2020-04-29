@@ -38,25 +38,32 @@ def hello():
     # Assemble datafile path.
     data_file = 'insta3d/renders/' + url_id + '/info.json'
 
+    b = bucket.blob(data_file)
+    b.cache_control = 'no-cache, max-age=0'
+
     # If a data element already exists return it.
-    if bucket.blob(data_file).exists():
+    if b.exists():
         print('item already exists.')
         # url = f'https://storage.googleapis.com/{storage_bucket_name}/{data_file}'
         # res = requests.get(url)
         # print(res.content)
         # return jsonify(res.json())
-        data_content = bucket.blob(data_file).download_as_string()
+        data_content = b.download_as_string()
         print(data_file)
         print(data_content)
-        return jsonify(json.loads(data_content))
+        try:
+            data = json.loads(data_content)
+            if data.status == 'ready':
+                return jsonify(data)
+        except Exception as e:
+            print(e)        
+
 
     # Other wise add a new one.
     status = {
         'id': url_id,
         'status': 'queued',
     }
-    b = bucket.blob(data_file)
-    b.cache_control = 'no-cache, max-age=0'
     b.upload_from_string(json.dumps(status))
 
     # And add to queue.
@@ -71,4 +78,4 @@ def hello():
 
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=3030, debug=True)
